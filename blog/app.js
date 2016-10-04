@@ -9,6 +9,8 @@ var routes = require('./routes/index');
 var users = require('./routes/users');
 var settings = require('./setting');
 
+var session = require('express-session');
+var MongoStore = require('connect-mongo')(session);
 var flash = require('connect-flash');
 
 // 生成一个express实例 app。
@@ -19,8 +21,22 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 // 设置视图模板引擎为 ejs。
 app.set('view engine', 'ejs');
+
+app.use(session({
+  secret: settings.cookieSecret,
+  key: settings.db,//cookie name
+  cookie: {maxAge: 1000 * 60 * 60 * 24 * 30},//30 days
+  store: new MongoStore({
+    db: settings.db,
+    host: settings.host,
+    port: settings.port
+  })
+}));
+
 //flash 是一个在 session 中用于存储信息的特定区域。信息写入 flash ，下一次显示完毕后即被清除。典型的应用是结合重定向的功能，确保信息是提供给下一个被渲染的页面。
 app.use(flash());
+
+
 // uncomment after placing your favicon in /public
 // 设置/public/favicon.ico为favicon图标。
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
@@ -36,10 +52,14 @@ app.use(cookieParser());
 // 设置public文件夹为存放静态文件的目录。
 app.use(express.static(path.join(__dirname, 'public')));
 
+
+
+
 // 路由控制器。
 // app.use('/', routes);
 // app.use('/users', users);
 routes(app)
+
 
 
 // catch 404 and forward to error handler
@@ -73,19 +93,7 @@ app.use(function(err, req, res, next) {
   });
 });
 
-var session = require('express-session');
-var MongoStore = require('connect-mongo')(session);
 
-app.use(session({
-  secret: settings.cookieSecret,
-  key: settings.db,//cookie name
-  cookie: {maxAge: 1000 * 60 * 60 * 24 * 30},//30 days
-  store: new MongoStore({
-    db: settings.db,
-    host: settings.host,
-    port: settings.port
-  })
-}));
 
 module.exports = app;
 

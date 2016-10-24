@@ -183,6 +183,7 @@ module.exports = function(app) {
 });
 
 app.get('/u/:name/:day/:title', function (req, res) {
+  console.log(req.params)
   Post.getOne(req.params.name, req.params.day, req.params.title, function (err, post) {
     if (err) {
       req.flash('error', err); 
@@ -216,30 +217,22 @@ app.get('/u/:name/:day/:title', function (req, res) {
     });
   });
 
-  app.post('/u/:name/:day/:title', checkLogin);
-  app.post('/u/:name/:day/:title', function (req, res) {
-  var date = new Date(),
-      time = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + 
-             date.getHours() + ":" + (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes());
-  var comment = {
-      name: req.body.name,
-      email: req.body.email,
-      website: req.body.website,
-      time: time,
-      content: req.body.content
-  };
-  var newComment = new Comment(req.params.name, req.params.day, req.params.title, comment);
-  newComment.save(function (err) {
+
+
+app.get('/remove/:name/:day/:title', checkLogin);
+app.get('/remove/:name/:day/:title', function (req, res) {
+  var currentUser = req.session.user;
+  Post.remove(currentUser.name, req.params.day, req.params.title, function (err) {
     if (err) {
       req.flash('error', err); 
       return res.redirect('back');
     }
-    req.flash('success', '留言成功!');
-    res.redirect('back');
+    req.flash('success', '删除成功!');
+    res.redirect('/');
   });
 });
 
-  app.post('/edit/:name/:day/:title', checkLogin);
+app.post('/edit/:name/:day/:title', checkLogin);
 app.post('/edit/:name/:day/:title', function (req, res) {
   var currentUser = req.session.user;
   Post.update(currentUser.name, req.params.day, req.params.title, req.body.post, function (err) {
@@ -253,16 +246,27 @@ app.post('/edit/:name/:day/:title', function (req, res) {
   });
 });
 
-app.get('/remove/:name/:day/:title', checkLogin);
-app.get('/remove/:name/:day/:title', function (req, res) {
-  var currentUser = req.session.user;
-  Post.remove(currentUser.name, req.params.day, req.params.title, function (err) {
+  app.post('/u/:name/:day/:title', checkLogin);
+  app.post('/u/:name/:day/:title', function (req, res) {
+  var date = new Date(),
+      time = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + 
+             date.getHours() + ":" + (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes());
+  var comment = {
+      name: req.body.name,
+      email: req.body.email,
+      website: req.body.website,
+      time: time,
+      content: req.body.content
+  };
+  var newComment = new Comment(req.params.name, req.params.day, req.params.title, comment);
+  
+  newComment.save(function (err) {
     if (err) {
       req.flash('error', err); 
       return res.redirect('back');
     }
-    req.flash('success', '删除成功!');
-    res.redirect('/');
+    req.flash('success', '留言成功!');
+    res.redirect('back');
   });
 });
 

@@ -9,7 +9,7 @@ function Comment (name, day, title, comment) {
 
 module.exports = Comment
 
-Comment.prototype.Save = function(callback) {
+Comment.prototype.save = function(callback) {
     var name = this.name,
         day = this.day,
         title = this.title,
@@ -43,3 +43,4 @@ Comment.prototype.Save = function(callback) {
        })
     })
 }
+

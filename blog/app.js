@@ -33,7 +33,8 @@ app.use(session({
   })
 }));
 
-//flash 是一个在 session 中用于存储信息的特定区域。信息写入 flash ，下一次显示完毕后即被清除。典型的应用是结合重定向的功能，确保信息是提供给下一个被渲染的页面。
+//flash 是一个在 session 中用于存储信息的特定区域。
+//信息写入 flash ，下一次显示完毕后即被清除。典型的应用是结合重定向的功能，确保信息是提供给下一个被渲染的页面。
 app.use(flash());
 
 
@@ -92,8 +93,6 @@ app.use(function(err, req, res, next) {
     error: {}
   });
 });
-
-
 
 module.exports = app;
 

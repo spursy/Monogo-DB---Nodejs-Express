@@ -204,6 +204,7 @@ module.exports = function(app) {
         req.flash('error', err); 
         return res.redirect('/');
       }
+      console.log(posts)
       res.render('tags', {
         title: '标签',
         posts: posts,
@@ -222,6 +223,31 @@ module.exports = function(app) {
       }
       res.render('tag', {
         title: 'TAG:' + req.params.tag,
+        posts: posts,
+        user: req.session.user,
+        success: req.flash('success').toString(),
+        error: req.flash('error').toString()
+      });
+    });
+  });
+
+  app.get('/links', function (req, res) {
+    res.render('links', {
+      title: '友情链接',
+      user: req.session.user,
+      success: req.flash('success').toString(),
+      error: req.flash('error').toString()
+    });
+  });
+
+  app.get('/search', function (req, res) {
+    Post.search(req.query.keyword, function (err, posts) {
+      if (err) {
+        req.flash('error', err); 
+        return res.redirect('/');
+      }
+      res.render('search', {
+        title: "SEARCH:" + req.query.keyword,
         posts: posts,
         user: req.session.user,
         success: req.flash('success').toString(),
@@ -366,6 +392,10 @@ module.exports = function(app) {
     req.flash('success', '留言成功!');
     res.redirect('back');
   });
+});
+
+app.use(function (req, res) {
+  res.render("404");
 });
 
   function checkLogin(req, res, next) {

@@ -1,4 +1,5 @@
-var mongodb = require('./db');
+var mongodb = require('./db'),
+    async = require('async');
 
 function User(user) {
   this.name = user.name;
@@ -9,7 +10,7 @@ function User(user) {
 module.exports = User;
 
 //存储用户信息
-User.prototype.save = function(callback) {
+User.prototype.save1 = function(callback) {
   //要存入数据库的用户文档
   var user = {
       name: this.name,
@@ -35,14 +36,45 @@ User.prototype.save = function(callback) {
         if (err) {
           return callback(err);//错误，返回 err 信息
         }
-        callback(null, user[0]);//成功！err 为 null，并返回存储后的用户文档
+        callback(null, user);//成功！err 为 null，并返回存储后的用户文档
       });
     });
   });
 };
 
+//存储用户信息
+User.prototype.save = function(callback) {
+  //要存入到数据库中的文档
+  var user = {
+    name: this.name,
+    password: this.password,
+    email: this.email
+  }
+
+  async.waterfall([
+    function(cb) {
+      mongodb.open(function (err, db){
+        cb(err, db) 
+      }) 
+    },
+    function(db, cb) {
+      db.collection("users", function (err, collection) {
+        cb(err, collection)
+      })
+    }, 
+    function(collection, cb) {
+      collection.insert(user, {save: true}, function(err, user){
+        cb(err, user)
+      })
+    }
+  ], function(err, user){
+      mongodb.close()
+      callback(err, user)
+  })
+}
+
 //读取用户信息
-User.get = function(name, callback) {
+User.get1 = function(name, callback) {
   //打开数据库
   mongodb.open(function (err, db) {
     if (err) {
@@ -67,3 +99,27 @@ User.get = function(name, callback) {
     });
   });
 };
+
+//读取用户信息
+User.get = function(name, callback) {
+    async.waterfall([
+      function(cb) {
+        mongodb.open(function(err, db) {
+          cb(err, db)
+        })
+      },
+      function(db, cb) {
+        db.collection('users', function (err, collection){
+          cb(err, collection)
+        })
+      }, 
+      function(collection, cb) {
+        collection.findOne({name: name}, function(err, user) {
+          cb(err, user)
+        })
+      }
+    ], function (err, user) {
+      mongodb.close()
+      callback(err, user)
+    })
+}

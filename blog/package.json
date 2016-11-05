@@ -18,6 +18,8 @@
     "mongodb":"2.0.42",
     "connect-mongo":"0.8.2",
     "markdown": "0.5.0",
-    "multer": "1.1.0"
+    "multer": "1.1.0",
+    "async": "*",
+    "should": "*"
   }
 } 

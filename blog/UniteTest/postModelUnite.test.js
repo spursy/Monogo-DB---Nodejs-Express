@@ -12,11 +12,18 @@ describe('Access to post DB: ', function(){
                 done()
             })
         })
-        it('Validate get posts by parameter.', function(done) {
-            Post.getTen("spursy",1, function(err, docs) {
+        it('Validate get ten posts by parameter.', function(done) {
+            Post.getTen("spursy", 1, function(err, docs) {
                 should.not.exist(err)
                 docs[0].name.should.be.equal("spursy")
                 done()
             }) 
         })
+        it("Validation get all posts by parameter.", function(done) {
+            Post.getAll("spursy1", function(err, docs) {
+                should.not.exist(err)
+                docs[0].name.should.be.equal("spursy")
+                done()
+            }) 
+        }) 
 });

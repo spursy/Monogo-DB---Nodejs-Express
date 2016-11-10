@@ -176,8 +176,36 @@ Post.getOne = function(name, day, title, callback) {
   });
 };
 
-//返回原始发表的内容（markdown 格式）
 Post.edit = function(name, day, title, callback) {
+  async.waterfall([
+    function(cb) {
+      mongodb.open(function(err, db){
+        cb(err, db)
+      })
+    }, 
+    function(db, cb) {
+      db.collection('Post', function(err, collection) {
+        cb(err, collection)
+      })
+    },
+    function(collection, cb) {
+      collection.find({
+        "name": name,
+        "time.day": day,
+        "title": title
+      }, function(err, doc) {
+        doc = markdown.toHTML(doc);
+        cb(err, doc)
+      })
+    }], function(err, doc) {
+      mongodb.close();
+      doc = markdown.toHTML(doc);
+      callback(null, doc);
+  })
+}
+
+//返回原始发表的内容（markdown 格式）
+Post.edit1 = function(name, day, title, callback) {
   //打开数据库
   mongodb.open(function (err, db) {
     if (err) {
@@ -199,6 +227,7 @@ Post.edit = function(name, day, title, callback) {
         if (err) {
           return callback(err);
         }
+        doc = markdown.toHTML(doc);
         callback(null, doc);//返回查询的一篇文章（markdown 格式）
       });
     });
@@ -208,79 +237,80 @@ Post.edit = function(name, day, title, callback) {
 //更新一篇文章及其相关信息
 Post.update = function(name, day, title, post, callback) {
   //打开数据库
-  mongodb.open(function (err, db) {
-    if (err) {
-      return callback(err);
-    }
-    //读取 posts 集合
-    db.collection('posts', function (err, collection) {
-      if (err) {
-        mongodb.close();
-        return callback(err);
-      }
-      //更新文章内容
+  async.waterfall([
+    function(cb) {
+      mongodb.open(function (err, db) { 
+        cb(err, db)
+      })
+    },
+    function(db, cb) {
+      db.collection('posts', function(err, collection) {
+        cb(err, collection)
+      })
+    },
+    function(collection, cb) {
       collection.update({
         "name": name,
         "time.day": day,
-        "title": title
+        "titile": title
       }, {
         $set: {post: post}
       }, function (err) {
-        mongodb.close();
-        if (err) {
-          return callback(err);
-        }
-        callback(null);
-      });
-    });
-  });
+        cb(err)
+      })
+    }
+  ], function(err) {
+    mongodb.close()
+    callback(err)
+  })
 };
 
 //删除一篇文章
 Post.remove = function(name, day, title, callback) {
   //打开数据库
-  mongodb.open(function (err, db) {
-    if (err) {
-      return callback(err);
-    }
-    //读取 posts 集合
-    db.collection('posts', function (err, collection) {
-      if (err) {
-        mongodb.close();
-        return callback(err);
-      }
-      //根据用户名、日期和标题查找并删除一篇文章
+  async.waterfall([
+    function(cb) {
+      mongodb.open(function(err, db) {
+        cb(err, db)
+      })
+    },
+    function(db, cb) {
+      db.collection("posts", function(err, collection) {
+        cb(err, collection)
+      })
+    },
+    function(collection, cb) {
       collection.remove({
         "name": name,
         "time.day": day,
         "title": title
       }, {
         w: 1
-      }, function (err) {
-        mongodb.close();
-        if (err) {
-          return callback(err);
-        }
-        callback(null);
-      });
-    });
-  });
+      }, function(err) {
+        cb(err)
+      })
+    }
+  ], function(err) {
+    callback(err)
+  })
 };
 
 //返回所有文章存档信息
 Post.getArchive = function(callback) {
+  console.log(2)
   //打开数据库
-  mongodb.open(function (err, db) {
-    if (err) {
-      return callback(err);
-    }
-    //读取 posts 集合
-    db.collection('posts', function (err, collection) {
-      if (err) {
-        mongodb.close();
-        return callback(err);
-      }
-      //返回只包含 name、time、title 属性的文档组成的存档数组
+  async.waterfall([
+    function(cb) {
+       mongodb.open(function (err, db) { 
+         cb(err, db)
+       })
+    },
+    function(db, cb) {
+      db.collection('posts', function (err, collection) { 
+        cb(err, collection)
+      })
+    },
+    function(collection, cb) {
       collection.find({}, {
         "name": 1,
         "time": 1,
@@ -288,50 +318,54 @@ Post.getArchive = function(callback) {
       }).sort({
         time: -1
       }).toArray(function (err, docs) {
-        mongodb.close();
-        if (err) {
-          return callback(err);
-        }
-        callback(null, docs);
+        cb(err, docs)
       });
-    });
-  });
+    }
+  ], function (err, docs) {
+    mongodb.close()
+    callback(err, docs);
+  })
 };
 
 //返回所有标签
 Post.getTags = function(callback) {
-  mongodb.open(function (err, db) {
-    if (err) {
-      return callback(err);
-    }
-    db.collection('posts', function (err, collection) {
-      if (err) {
-        mongodb.close();
-        return callback(err);
-      }
-      //distinct 用来找出给定键的所有不同值
+  async.waterfall([
+     function(cb) {
+       mongodb.open(function (err, db) { 
+         cb(err, db)
+      })
+     },
+     function(db, cb) {
+       db.collection('posts', function (err, collection) {
+         cb(err, collection)
+       })
+     },
+     function(collection, cb) {
+       //distinct 用来找出给定键的所有不同值
       collection.distinct("tags", function (err, docs) {
-        mongodb.close();
-        if (err) {
-          return callback(err);
-        }
-        callback(null, docs);
+        cb(err, docs)
       });
-    });
-  });
+     }
+  ], function(err, docs) {
+    mongodb.close();
+    callback(err, docs);
+  })
 };
 
 //返回含有特定标签的所有文章
 Post.getTag = function(tag, callback) {
-  mongodb.open(function (err, db) {
-    if (err) {
-      return callback(err);
-    }
-    db.collection('posts', function (err, collection) {
-      if (err) {
-        mongodb.close();
-        return callback(err);
-      }
+  async.waterfall([
+    function(cb) {
+      mongodb.open(function (err, db) { 
+        cb(err, db)
+      })
+    },
+    function(db, cb) {
+      db.collection('posts', function (err, collection) {
+        cb(err, collection)
+      })
+    },
+    function(collection, cb) {
       //查询所有 tags 数组内包含 tag 的文档
       //并返回只含有 name、time、title 组成的数组
       collection.find({
@@ -343,27 +377,29 @@ Post.getTag = function(tag, callback) {
       }).sort({
         time: -1
       }).toArray(function (err, docs) {
-        mongodb.close();
-        if (err) {
-          return callback(err);
-        }
-        callback(null, docs);
-      });
-    });
-  });
+        cb(err, docs)
+      })
+    } 
+  ], function(err, docs){
+    mongodb.close();
+    callback(err, docs);
+  })
 };
 
 //返回通过标题关键字查询的所有文章信息
 Post.search = function(keyword, callback) {
-  mongodb.open(function (err, db) {
-    if (err) {
-      return callback(err);
-    }
-    db.collection('posts', function (err, collection) {
-      if (err) {
-        mongodb.close();
-        return callback(err);
-      }
+  async.waterfall([
+    function(cb) {
+      mongodb.open(function (err, db) {
+        cb(err, db)
+      })
+    },
+    function(db, cb) {
+      db.collection('posts', function (err, collection) {
+        cb(err, collection)
+      })
+    },
+    function(collection, cb) {
       var pattern = new RegExp(keyword, "i");
       collection.find({
         "title": pattern
@@ -374,13 +410,12 @@ Post.search = function(keyword, callback) {
       }).sort({
         time: -1
       }).toArray(function (err, docs) {
-        mongodb.close();
-        if (err) {
-         return callback(err);
-        }
-        callback(null, docs);
+        cb(err, docs)
       });
-    });
-  });
+    }
+  ], function(err, docs) {
+    mongodb.close();
+    callback(err, docs);
+  })
 };
 
